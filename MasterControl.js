@@ -1,202 +1,220 @@
-// Simple Controller Javascript Framework by Alexander Batista - 
-// version 1.3
+// Simple MVC JAVSCRIPT framework by Alexander Batista - MIT Licensed
+// version 1.4
 
-
-// ------------------------------------>
-// TODO: remove view and modal and create controller and actions -> controllers have actions that will be called in a order
-// ------------------------------------>
+// NO CONTROLLER OR ACTION OR MODULE CAN HAVE THE SAME NAME
 
 var MasterControl = function () {
 
-    var mainApp = this;
-
     // keeps the list of controller that need to be called
-    this.$$controllerList = [];
-    this.$$modelList = [];
-    this.$$viewList = [];
+    var $$controllerList = [];
+    var $$methodList = [];
+    var $$actionList = [];
+    var $$controllerWatch = [];
 
-    var Controller = function () {
-    };
+    var init = function (appName) {
 
-    Controller.prototype.$$watch = [];
-
-    // loops through watch array and calls every function
-    Controller.prototype.digest = function () {
-        var that = this;
-        // will digest initial controller
-        for (var i = 0; i < that.$$watch.length; i++) {
-            var counter = 0;
-            var functionName;
-            // we found a controller on the page
-            if (mainApp.$$controllerList.length > 0) {
-                // loop through callback array and call them
-                mainApp.$$controllerList.forEach(function (callback) {
-                    // only call the ones that we find in the DOM
-                    if (callback.scopeName === that.$$watch[i].controllerName) {
-                        // callback(scope);
-                        counter++
-                        callback.aFunction();
-                    }
-                    else{
-                        functionName = that.$$watch[i].controllerName;
-                    }
-                });
-                // if couter is 0 then it did not find controller for attribute
-                if (counter === 0) {
-                    var errorMessage = "Error could not find contoller with name " + functionName;
-                    throw new Error(errorMessage);
-                }
-            }
-            else {
-                var errorMessage = "Error could not find any Controllers";
-                throw new Error(errorMessage);
-            }
-        }
-
-        //clear the array
-        that.$$watch = [];
-
-    };
-
-    this.module = function(appName, func){
-        // calling inner fucntion
-        func();
-        this.init(appName);
-    };
-
-    this.init = function (appName) {
-
-        // wait until everything is loaded on the page so that every javascript controller get loaded
+        // this makes sure the declarations of modules, controllers, actions get loaded first.
         window.onload = function () {
             //look for main app controller 
             var moduleName = "[fan-app='" + appName + "']";
             var moduleArray = document.querySelectorAll(moduleName);
 
-            if (moduleArray.length > 0) {
-
+            // check that we find an app declaration
+            if (moduleArray.length > -1) {
+                // for each fan-app 
                 for (var r = 0; r < moduleArray.length; r++) {
-                    // select all controllers inside of the main app
-                    var ControllerArray = moduleArray[r].querySelectorAll("[fan-controller]");
 
-                    // loop through all controllers found inside the main app
-                    if (ControllerArray.length > -1) {
-                        for (var i = 0; i < ControllerArray.length; i++) {
-                            // create a controller class for each one
-                            var aController = new Controller();
-                            var controllerName = ControllerArray[i].getAttribute("fan-controller");
+                    // select all controllers inside of the main app
+                    var controllerArray = moduleArray[r].querySelectorAll("[fan-controller]");
+
+                    // check that we find a controller declaration inside the app declaration
+                    if (controllerArray.length > -1) {
+
+                        // loop through all controllers found inside the main app
+                        for (var i = 0; i < controllerArray.length; i++) {
+
+                            var controllerName = controllerArray[i].getAttribute("fan-controller");
 
                             // create a controller engine 
-                            var contollerWatch = {
+                            var controllerWatcher = {
                                 controllerName: controllerName,
-                                scopeHtml: ControllerArray[i]
+                                controllerScope: controllerArray[i], // scope is the html of the containing declaration
+                                actions : []
                             }
+
+                            // find actions inside the controller declaration
+                            var actionArray = controllerArray[i].querySelectorAll("[fan-action]");
+                            if (actionArray.length > -1) {
+
+                                for (var r = 0; r < actionArray.length; r++) {
+
+                                    var actionName = actionArray[i].getAttribute("fan-action");
+
+                                        // create a action engine 
+                                        var actionWatcher = {
+                                            actionName: actionName,
+                                            actionScope: actionArray[i] // scope is the html of the containing declaration
+                                        }
+
+                                        // push to action array inside the controller watch
+                                        controllerWatcher.actions.push(actionWatcher);
+                                }
+
+                            };
 
                             // send the controller to watch
-                            aController.$$watch.push(contollerWatch);
+                            $$controllerWatch.push(watcher);
 
                             // wait for last loop to call digest
-                            if (i == ControllerArray.length -1) {
+                            if (i == ControllerArray.length - 1) {
                                 // calling the function that will call every function that relates
-                                aController.digest();
+                                digest();
                             }
                         }
-                    }
-                }
-            }
-            else{
-                var errorMessage = "Error could not find application declaration";
-                throw new Error(errorMessage);
 
+                    }
+
+                }
             }
         };
-    },
+    };
 
-    // this gets called by the declairation of the function on the page
-    this.controller = function (scopeName, aFunction) {
-        // this will push an object into array
-        var object = {
-            scopeName: scopeName,
-            aFunction: aFunction
+
+    // loops through watch array and calls every function
+    var digest = function () {
+
+        // Error Handling
+        if ($$controllerWatch.length === $$controllerList.length){
+            var errorMessage = "Error your missing an HTML controller declaration or an function controller declaration";
+            throw new Error(errorMessage);
         }
-        mainApp.$$controllerList.push(object);
-    },
 
-    // this gets called first to load all the models 
-    this.model = function (scopeName, aFunction) {
-        // this will push an object into array
-        var object = {
-            scopeName: scopeName,
-            aFunction: aFunction
-        }
-        mainApp.$$modelList.push(object);
-    },
+        // loop through all controller html delcarations
+        for (var i = 0; i < $$controllerWatch.length; i++) {
+           
+            var controllerMatchCounter = 0;
 
-    // this will get the html and the object and return anonymous function 
-    this.modelBind = function (modelName, dataObject) {
-        var counter = 0;
-        // loop through all models that were loaded 
-        if (mainApp.$$modelList.length > 0) {
-            // call an anonymous function that has object
-            mainApp.$$modelList.forEach(function (callback) {
-                // only call the ones that we find in the DOM
-                if (callback.scopeName === modelName) {
-                    counter++
-                    callback.aFunction(dataObject);
+            // loop through all function declarations
+            $$controllerList.forEach(function (callback) {
+
+                // only call the declarations that match
+                if (callback.scopeName === $$controllerWatch[i].controllerName) {
+                    controllerMatchCounter++;
+                    callback.aFunction();
+
+                    //loop through html controller list
+                    for (var p = 0; p < $$controllerWatch[i].actions.length; p++) {
+
+                        var actionMatchCounter = 0;
+
+                        // loop through function action list 
+                        $$actionList.forEach(function (actionCallBack) {
+
+                            if (actionCallBack.scopeName === $$controllerWatch[i].actions[p].actionName ) {
+
+                                actionCallBack.aFunction();
+                            }
+
+                        });
+                    }
+
+                    // if action counter is 0 then it did not find action controller with html name
+                    if (actionMatchCounter === 0) {
+                        var errorMessage = "Error could not find any function action declaration with name " + $$controllerWatch[i].controllerName;
+                        throw new Error(errorMessage);
+                    }
+
                 }
+
             });
-            // if couter is 0 then it did not find controller for attribute
-            if (counter === 0) {
-                var errorMessage = "Error could not find model with name " + modelName;
+
+            // if controller counter is 0 then it did not find function controller with html name
+            if (controllerMatchCounter === 0) {
+                var errorMessage = "Error could not find any function controller declaration with name " + $$controllerWatch[i].controllerName;
                 throw new Error(errorMessage);
             }
         }
-        else {
-            var errorMessage = "Error could not find any Model";
-            throw new Error(errorMessage);
-        }
-    },
 
-    // this gets called first to load all the Views
-    this.View = function (scopeName, aFunction) {
-        // this will push the function on to an array
-        var object = {
-            scopeName: scopeName,
-            aFunction: aFunction
-        }
-        mainApp.$$viewList.push(object);
+        //clear the array
+        $$controllerWatch = [];
 
-    },
+    };
 
-    // this will get 
-    this.viewbind = function(modelName, dataObject){
-        // loop through all callback view functions
+    // return only the api that we want to use
+    return {
+            
+            module : function(appName, func){
+                // calling inner fucntion
+                func();
+                init(appName);
+            },
 
-        var counter = 0;
-        // loop through all models that were loaded 
-        if (mainApp.$$viewList.length > 0) {
-            // call an anonymous function that has object
-            mainApp.$$viewList.forEach(function (callback) {
-                // only call the ones that we find in the DOM
-                if (callback.scopeName === modelName) {
-                    counter++
-                    callback.aFunction(dataObject);
+            // this gets called by the declairation of the function on the page
+            controller : function (scopeName, aFunction) {
+                // this will push an object into array
+                var object = {
+                    scopeName: scopeName,
+                    aFunction: aFunction
                 }
-            });
-            // if couter is 0 then it did not find controller for attribute
-            if (counter === 0) {
-                var errorMessage = "Error could not find View with name " + modelName;
-                throw new Error(errorMessage);
-            }
-        }
-        else {
-            var errorMessage = "Error could not find any View";
-            throw new Error(errorMessage);
-        }
+
+                $$controllerList.push(object);
+            },
+
+            // this gets called by the declairation of the function on the page
+            action : function (scopeName, aFunction) {
+                // this will push an object into array
+                var object = {
+                    scopeName: scopeName,
+                    aFunction: aFunction
+                }
+
+                $$actionList.push(object);
+            },
+
+            // this will call any methods that we create
+            callMethod : function (methodName, dataObject) {
+
+                    var counter = 0;
+                    // loop through all models that were loaded 
+                    if ($$methodList.length > 0) {
+                        // call an anonymous function that has object
+                        $$methodList.forEach(function (callback) {
+                            // only call the ones that we find in the DOM
+                            if (callback.scopeName === methodName) {
+                                counter++
+                                callback.aFunction(dataObject);
+                            }
+                        });
+                        // if couter is 0 then it did not find controller for attribute
+                        if (counter === 0) {
+                            var errorMessage = "Error could not find method with name " + methodName;
+                            throw new Error(errorMessage);
+                        }
+                    }
+                    else {
+                        var errorMessage = "Error could not find any methods";
+                        throw new Error(errorMessage);
+                    }
+                },
+
+                // this gets called first to load all the Views
+            method : function (scopeName, aFunction) {
+                    // this will push the function on to an array
+                    var object = {
+                        scopeName: scopeName,
+                        aFunction: aFunction
+                    }
+
+                    $$methodList.push(object);
+
+                },
+
     }
 };
 
+
 // load the Application
-// var app = new MasterControl();
+// var app = MasterControl();
 
 // declare the Application
 // app.module("nameofApp", function(){});
@@ -212,18 +230,61 @@ var MasterControl = function () {
 // EXAMPLE:
 // fan-controller='name'
 
-// declare a Model data Binder inside controller
-// EXAMPLE: inside the model you will do your AJAX call
-// AdminApp.modelBind('name', data);
+// declare a Action
+// EXAMPLE:
+// AdminApp.action('name', function () {});
 
-// declare a Model first
+// declare a action in HTML inside of controller
+// EXAMPLE:
+// fan-action='name'
+
+// EXAMPLE: inside the controllers you can call call actions
+// AdminApp.callMethod('name', data);
+
+// declare a Mothod 
 // EXAMPLE: 
-// AdminApp.model('name',function ( data ) {});
+// AdminApp.method('name', function ( data ) {});
 
-//declare a View can be inside of your Model / View can be inside your Controller
-// EXAMPLE: DOM manipulation
-// AdminApp.viewbind('name', data);
+// order of operation
+// app module, app controller, app action,
 
-// declare a View first
-// EXAMPLE: 
-// AdminApp.view('name',function ( data ) {});
+// app module can load menu, footer and anything else you want every page to have
+
+// app controller can load the general page
+
+// app action can load specific html and specific items 
+
+
+
+// DIFFERENT WAYS TO BUILD YOUR APPLICATION
+
+/*
+
+AdminApp.controller('name', function () {
+
+    console && console.log("controller");
+
+    AdminApp.action("name", function(){
+
+            console && console.log("action");
+
+    });
+});
+
+
+
+// application can be written like this
+AdminApp.controller('name', function (actions) {
+
+    console && console.log("controller");
+
+});
+
+AdminApp.action('name', function (actions) {
+
+    console && console.log("action");
+
+});
+
+
+*/
