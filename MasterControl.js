@@ -1,7 +1,6 @@
 // Simple MVC JAVSCRIPT framework by Alexander Batista - MIT Licensed
 // version 1.4
 
-// NO CONTROLLER OR ACTION OR MODULE CAN HAVE THE SAME NAME
 
 var MasterControl = function () {
 
@@ -99,9 +98,19 @@ var MasterControl = function () {
             $$controllerList.forEach(function (callback) {
 
                 // only call the declarations that match
-                if (callback.scopeName === $$controllerWatch[i].controllerName) {
+                if (callback.controllerName === $$controllerWatch[i].controllerName) {
                     controllerMatchCounter++;
-                    callback.aFunction();
+
+                    var actionObject = {}
+                    for (var r = 0; r < $$controllerWatch[i].actions.length; r++) {
+
+                        actionObject[$$controllerWatch[i].actions[r].actionName] = function(func){
+                            func();
+                        };
+
+                    };
+
+                    callback.aFunction(actionObject);
 
                     //loop through html controller list
                     for (var p = 0; p < $$controllerWatch[i].actions.length; p++) {
@@ -111,18 +120,20 @@ var MasterControl = function () {
                         // loop through function action list 
                         $$actionList.forEach(function (actionCallBack) {
 
-                            if (actionCallBack.scopeName === $$controllerWatch[i].actions[p].actionName ) {
-
+                            if (actionCallBack.controllerName === $$controllerWatch[i].controllerName && actionCallBack.actionName === $$controllerWatch[i].actions[p].actionName) {
+                                actionMatchCounter++;
                                 actionCallBack.aFunction();
+
                             }
 
                         });
-                    }
 
-                    // if action counter is 0 then it did not find action controller with html name
-                    if (actionMatchCounter === 0) {
-                        var errorMessage = "Error could not find any function action declaration with name " + $$controllerWatch[i].controllerName;
-                        throw new Error(errorMessage);
+                        // if action counter is 0 then it did not find action controller with html name
+                        if (actionMatchCounter === 0) {
+                            var errorMessage = "Error could not find any function action declaration with name " + $$controllerWatch[i].actions[p].actionName + " for controller " + $$controllerWatch[i].controllerName;
+                            throw new Error(errorMessage);
+                        }
+
                     }
 
                 }
@@ -151,10 +162,10 @@ var MasterControl = function () {
             },
 
             // this gets called by the declairation of the function on the page
-            controller : function (scopeName, aFunction) {
+            controller : function (controllerName, aFunction) {
                 // this will push an object into array
                 var object = {
-                    scopeName: scopeName,
+                    controllerName: controllerName,
                     aFunction: aFunction
                 }
 
@@ -162,10 +173,11 @@ var MasterControl = function () {
             },
 
             // this gets called by the declairation of the function on the page
-            action : function (scopeName, aFunction) {
+            action : function (controllerName, actionName, aFunction) {
                 // this will push an object into array
                 var object = {
-                    scopeName: scopeName,
+                    controllerName: controllerName,
+                    actionName: actionName,
                     aFunction: aFunction
                 }
 
@@ -208,11 +220,14 @@ var MasterControl = function () {
 
                     $$methodList.push(object);
 
-                },
+                }
 
     }
 };
 
+/********************************************************************************************************************************/
+/************************************************ LOADING YOUR APPLICATION EXAMPLES *********************************************/
+/********************************************************************************************************************************/
 
 // load the Application
 // var app = MasterControl();
@@ -233,7 +248,7 @@ var MasterControl = function () {
 
 // declare a Action
 // EXAMPLE:
-// AdminApp.action('name', function () {});
+// AdminApp.action('controllerName', name', function () {});
 
 // declare a action in HTML inside of controller
 // EXAMPLE:
@@ -246,31 +261,35 @@ var MasterControl = function () {
 // EXAMPLE: 
 // AdminApp.method('name', function ( data ) {});
 
-// order of operation
-// app module, app controller, app action,
 
-// app module can load menu, footer and anything else you want every page to have
+/********************************************************************************************************************************/
+/******************************************* MANY DIFFERENT WAYS TO DECLAIR ACTIONS *********************************************/
+/********************************************************************************************************************************/
 
-// app controller can load the general page
-
-// app action can load specific html and specific items 
-
-
-
-// DIFFERENT WAYS TO BUILD YOUR APPLICATION
 
 /*
 AdminApp.controller('name', function () {
-    console && console.log("controller");
-    AdminApp.action("name", function(){
-            console && console.log("action");
+    console && console.log("inside controller");
+
+    AdminApp.action('CONTROLLER NAME', "name", function(){
+            console && console.log("inside action");
     });
 });
-// application can be written like this
-AdminApp.controller('name', function (actions) {
-    console && console.log("controller");
+
+AdminApp.controller('name', function (action) {
+    console && console.log("inside controller");
+
+    action.nameOfAction(function(){
+        console && console.log("inside action");
+    });
 });
-AdminApp.action('name', function (actions) {
-    console && console.log("action");
+
+AdminApp.controller('name', function () {
+    console && console.log("inside controller");
 });
+
+AdminApp.action('controller name','name', function () {
+    console && console.log("inside action");
+});
+
 */
