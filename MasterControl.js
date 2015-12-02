@@ -40,10 +40,11 @@ var MasterControl = function () {
                                 controllerName: controllerName,
                                 controllerScope: controllerArray[i], // scope is the html of the containing declaration
                                 actions : []
-                            }
+                            };
 
                             // find actions inside the controller declaration
                             var actionArray = controllerArray[i].querySelectorAll("[fan-action]");
+
                             if (actionArray.length > -1) {
 
                                 for (var r = 0; r < actionArray.length; r++) {
@@ -63,10 +64,10 @@ var MasterControl = function () {
                             };
 
                             // send the controller to watch
-                            $$controllerWatch.push(watcher);
+                            $$controllerWatch.push(controllerWatcher);
 
                             // wait for last loop to call digest
-                            if (i == ControllerArray.length - 1) {
+                            if (i == controllerArray.length - 1) {
                                 // calling the function that will call every function that relates
                                 digest();
                             }
@@ -259,32 +260,17 @@ var MasterControl = function () {
 // DIFFERENT WAYS TO BUILD YOUR APPLICATION
 
 /*
-
 AdminApp.controller('name', function () {
-
     console && console.log("controller");
-
     AdminApp.action("name", function(){
-
             console && console.log("action");
-
     });
 });
-
-
-
 // application can be written like this
 AdminApp.controller('name', function (actions) {
-
     console && console.log("controller");
-
 });
-
 AdminApp.action('name', function (actions) {
-
     console && console.log("action");
-
 });
-
-
 */
