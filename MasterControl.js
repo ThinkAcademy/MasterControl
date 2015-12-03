@@ -1,6 +1,8 @@
 // Simple MVC JAVSCRIPT framework by Alexander Batista - MIT Licensed
 // version 1.4
 
+//TODO: Test Single Page Application routing
+// TODO: tes getMethods 
 
 var MasterControl = function () {
 
@@ -10,81 +12,97 @@ var MasterControl = function () {
     var $$actionList = [];
     var $$controllerWatch = [];
 
-    var init = function (appName) {
+    var init = function (appName, func) {
+
+
 
         // this makes sure the declarations of modules, controllers, actions get loaded first.
         window.onload = function () {
             //look for main app controller 
             var moduleName = "[fan-app='" + appName + "']";
-            var moduleArray = document.querySelectorAll(moduleName);
+            var module = document.querySelector(moduleName);
 
-            // check that we find an app declaration
-            if (moduleArray.length > -1) {
-                // for each fan-app 
-                for (var r = 0; r < moduleArray.length; r++) {
+            // checks to see if routing is enabled and if so runs routing
+            runRouting(module);
 
-                    // select all controllers inside of the main app
-                    var controllerArray = moduleArray[r].querySelectorAll("[fan-controller]");
+            // select all controllers inside of the main app
+            var controllerArray = module.querySelectorAll("[fan-controller]");
 
-                    // check that we find a controller declaration inside the app declaration
-                    if (controllerArray.length > -1) {
+            // check that we find a controller declaration inside the app declaration
+            if (controllerArray.length > -1) {
 
-                        // loop through all controllers found inside the main app
-                        for (var i = 0; i < controllerArray.length; i++) {
+                // loop through all controllers found inside the main app
+                for (var i = 0; i < controllerArray.length; i++) {
 
-                            var controllerName = controllerArray[i].getAttribute("fan-controller");
+                    var controllerName = controllerArray[i].getAttribute("fan-controller");
 
-                            // create a controller engine 
-                            var controllerWatcher = {
-                                controllerName: controllerName,
-                                controllerScope: controllerArray[i], // scope is the html of the containing declaration
-                                actions : []
-                            };
+                    // create a controller engine 
+                    var controllerWatcher = {
+                        controllerName: controllerName,
+                        controllerScope: controllerArray[i], // scope is the html of the containing declaration
+                        actions : []
+                    };
 
-                            // find actions inside the controller declaration
-                            var actionArray = controllerArray[i].querySelectorAll("[fan-action]");
+                    // find actions inside the controller declaration
+                    var actionArray = controllerArray[i].querySelectorAll("[fan-action]");
 
-                            if (actionArray.length > -1) {
+                    if (actionArray.length > -1) {
 
-                                for (var r = 0; r < actionArray.length; r++) {
+                        for (var r = 0; r < actionArray.length; r++) {
 
-                                    var actionName = actionArray[i].getAttribute("fan-action");
+                            var actionName = actionArray[i].getAttribute("fan-action");
 
-                                        // create a action engine 
-                                        var actionWatcher = {
-                                            actionName: actionName,
-                                            actionScope: actionArray[i] // scope is the html of the containing declaration
-                                        }
-
-                                        // push to action array inside the controller watch
-                                        controllerWatcher.actions.push(actionWatcher);
+                                // create a action engine 
+                                var actionWatcher = {
+                                    actionName: actionName,
+                                    actionScope: actionArray[i] // scope is the html of the containing declaration
                                 }
 
-                            };
-
-                            // send the controller to watch
-                            $$controllerWatch.push(controllerWatcher);
-
-                            // wait for last loop to call digest
-                            if (i == controllerArray.length - 1) {
-                                // calling the function that will call every function that relates
-                                digest();
-                            }
+                                // push to action array inside the controller watch
+                                controllerWatcher.actions.push(actionWatcher);
                         }
 
-                    }
+                    };
 
+                    // send the controller to watch
+                    $$controllerWatch.push(controllerWatcher);
+
+                    // wait for last loop to call digest
+                    if (i == controllerArray.length - 1) {
+                        // calling the function that will call every function that relates
+                        func(module);
+                        digest();
+                    }
                 }
+
             }
         };
     };
 
+    // changes the controllers and actions that have name routing to url controller and action
+    var runRouting = function(module){
+
+        // select all controllers with name routing inside of the main app
+        var routingController = module.querySelector("[fan-controller='routing']");
+
+        if(routingController !== null){
+            var routingAction = routingController.querySelector("[fan-action='routing']");
+
+            // get url 
+            var urlArray = window.location.pathname.split("/");
+            var controller = urlArray[1];
+            var action = urlArray[2];
+
+            routingController.setAttribute("fan-controller", controller);
+            routingAction.setAttribute("fan-action", action);
+        }
+    };
 
     // loops through watch array and calls every function
     var digest = function () {
 
         // Error Handling
-        if ($$controllerWatch.length === $$controllerList.length){
+        if ($$controllerWatch.length !== $$controllerList.length){
             var errorMessage = "Error your missing an HTML controller declaration or an function controller declaration";
             throw new Error(errorMessage);
         }
@@ -95,26 +113,29 @@ var MasterControl = function () {
             var controllerMatchCounter = 0;
 
             // loop through all function declarations
-            $$controllerList.forEach(function (callback) {
+            $$controllerList.forEach(function (callback, index) {
 
                 // only call the declarations that match
                 if (callback.controllerName === $$controllerWatch[i].controllerName) {
                     controllerMatchCounter++;
 
                     var actionObject = {}
+                    // loop through and call all actions inside of function
                     for (var r = 0; r < $$controllerWatch[i].actions.length; r++) {
-
-                        actionObject[$$controllerWatch[i].actions[r].actionName] = function(func){
-                            func();
+                        var innerAction = $$controllerWatch[i].actions[r];
+                        actionObject[innerAction.actionName] = function(func){
+                            func(innerAction.actionScope);
+                            // remove action you just called from list of actions to call
+                           $$controllerWatch[i].actions = $$controllerWatch[i].actions.splice(r, 1);
                         };
 
                     };
 
-                    callback.aFunction(actionObject);
+                    callback.aFunction(actionObject, $$controllerWatch[i].controllerScope);
 
                     //loop through html controller list
                     for (var p = 0; p < $$controllerWatch[i].actions.length; p++) {
-
+                        var outerAction = $$controllerWatch[i].actions[p]
                         var actionMatchCounter = 0;
 
                         // loop through function action list 
@@ -122,8 +143,7 @@ var MasterControl = function () {
 
                             if (actionCallBack.controllerName === $$controllerWatch[i].controllerName && actionCallBack.actionName === $$controllerWatch[i].actions[p].actionName) {
                                 actionMatchCounter++;
-                                actionCallBack.aFunction();
-
+                                actionCallBack.aFunction(outerAction.actionScope);
                             }
 
                         });
@@ -157,8 +177,7 @@ var MasterControl = function () {
             
             module : function(appName, func){
                 // calling inner fucntion
-                func();
-                init(appName);
+                init(appName, func);
             },
 
             // this gets called by the declairation of the function on the page
@@ -233,14 +252,14 @@ var MasterControl = function () {
 // var app = MasterControl();
 
 // declare the Application
-// app.module("nameofApp", function(){});
+// app.module("nameofApp", function(scope){});
 
 // declare Application in html
 // fan-app="nameofapp"
 
 // declare a Controller
 // EXAMPLE:
-// AdminApp.controller('name', function () {});
+// AdminApp.controller('name', function (action, scope) {});
 
 // declare a Controller in HTML
 // EXAMPLE:
@@ -268,28 +287,33 @@ var MasterControl = function () {
 
 
 /*
-AdminApp.controller('name', function () {
+AdminApp.controller('name', function (action, scopeController) {
     console && console.log("inside controller");
 
-    AdminApp.action('CONTROLLER NAME', "name", function(){
+    AdminApp.action('CONTROLLER NAME', "name", function(scopeAction){
             console && console.log("inside action");
     });
+
 });
 
-AdminApp.controller('name', function (action) {
-    console && console.log("inside controller");
-
-    action.nameOfAction(function(){
-        console && console.log("inside action");
-    });
-});
-
-AdminApp.controller('name', function () {
+AdminApp.controller('name', function (scopeController) {
     console && console.log("inside controller");
 });
 
-AdminApp.action('controller name','name', function () {
+AdminApp.action('controller name','name', function (scopeAction) {
     console && console.log("inside action");
 });
 
+AdminApp.controller('name', function (action, scopeController) {
+
+    console && console.log("inside controller");
+
+    action.nameOfAction(function(scopeAction){
+        console && console.log("inside action");
+    });
+
+});
+
+
 */
+
