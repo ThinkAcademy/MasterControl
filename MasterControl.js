@@ -267,7 +267,7 @@ var MasterControl = function () {
 
 // declare a Action
 // EXAMPLE:
-// AdminApp.action('controllerName', name', function () {});
+// AdminApp.action('controllerName', name', function (scope) {});
 
 // declare a action in HTML inside of controller
 // EXAMPLE:
