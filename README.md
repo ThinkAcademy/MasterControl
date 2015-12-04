@@ -1,4 +1,4 @@
-#Master Control is a JavaScript library for building moduler based applications.
+#Master Control is a JavaScript library for building modular based applications.
 
 ##Why use MasterControl.JS?
 Lots of people use Master Control as the C in MVC. Because Master Control doesn't force you into any mandatory technology stack, it's easy to start building on existing apps or completely build out your application using Master Control, it's that powerful. The idea behind using controllers is that it allows you to organize your code into module sections. This allows you to have better control of the work flow that your applications hinders to. No matter the size (BIG, small) or type (Non-SPA, SPA) of application this little library is able to handle it.
