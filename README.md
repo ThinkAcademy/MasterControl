@@ -34,7 +34,8 @@ Download the minified or commented version and add it to your project's JS libra
              </div>
           </div>
  ```
- #### Getting started with Function declarations - Step 2
+ 
+### Getting started with Function declarations - Step 2
  In this step we will create a new Javascript file inside our application called
   ```
     app.js
