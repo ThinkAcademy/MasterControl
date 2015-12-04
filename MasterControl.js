@@ -1,8 +1,5 @@
-// Simple MVC JAVSCRIPT framework by Alexander Batista - MIT Licensed
+// A simple controller Based JAVSCRIPT framework by Alexander Batista - MIT Licensed
 // version 1.4
-
-//TODO: Test Single Page Application routing
-// TODO: tes getMethods 
 
 var MasterControl = function () {
 
@@ -100,12 +97,6 @@ var MasterControl = function () {
 
     // loops through watch array and calls every function
     var digest = function () {
-
-        // Error Handling
-        if ($$controllerWatch.length !== $$controllerList.length){
-            var errorMessage = "Error your missing an HTML controller declaration or an function controller declaration";
-            throw new Error(errorMessage);
-        }
 
         // loop through all controller html delcarations
         for (var i = 0; i < $$controllerWatch.length; i++) {
@@ -289,31 +280,20 @@ var MasterControl = function () {
 /*
 AdminApp.controller('name', function (action, scopeController) {
     console && console.log("inside controller");
-
     AdminApp.action('CONTROLLER NAME', "name", function(scopeAction){
             console && console.log("inside action");
     });
-
 });
-
 AdminApp.controller('name', function (scopeController) {
     console && console.log("inside controller");
 });
-
 AdminApp.action('controller name','name', function (scopeAction) {
     console && console.log("inside action");
 });
-
 AdminApp.controller('name', function (action, scopeController) {
-
     console && console.log("inside controller");
-
     action.nameOfAction(function(scopeAction){
         console && console.log("inside action");
     });
-
 });
-
-
 */
-
