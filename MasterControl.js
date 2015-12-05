@@ -1,8 +1,6 @@
 // A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed - ThinkAcademy.io
 // version 1.4
 
-// TODO: make sure thet we error check to make sure there is always a controller and action names routing
-
 var MasterControl = function () {
 
     // keeps the list of controller that need to be called
@@ -21,8 +19,10 @@ var MasterControl = function () {
             var moduleName = "[fan-app='" + appName + "']";
             var module = document.querySelector(moduleName);
 
-            // checks to see if routing is enabled and if so runs routing
-            runRouting(module);
+            // checks to see if master routing is instantiated
+            if(typeof MasterRouter !== 'undefined'){
+                var routing = MasterRouting(module);
+            }
 
             // select all controllers inside of the main app
             var controllerArray = module.querySelectorAll("[fan-controller]");
@@ -76,25 +76,6 @@ var MasterControl = function () {
 
             }
         };
-    };
-
-    // changes the controllers and actions that have name routing to url controller and action
-    var runRouting = function(module){
-
-        // select all controllers with name routing inside of the main app
-        var routingController = module.querySelector("[fan-controller='routing']");
-
-        if(routingController !== null){
-            var routingAction = routingController.querySelector("[fan-action='routing']");
-
-            // get url 
-            var urlArray = window.location.pathname.split("/");
-            var controller = urlArray[1];
-            var action = urlArray[2];
-
-            routingController.setAttribute("fan-controller", controller);
-            routingAction.setAttribute("fan-action", action);
-        }
     };
 
     // loops through watch array and calls every function
@@ -298,24 +279,6 @@ AdminApp.controller('name', function (action, scopeController) {
     });
 });
 */
-
-
-/********************************************************************************************************************************/
-/******************************************* GETTING STARTED ROUTING YOUR APPLICATION *******************************************/
-/********************************************************************************************************************************/
-
-// This will get replaced with the controller and action url names
-
-// declare a routing Controller in HTML
-// EXAMPLE:
-// fan-controller='routing'
-
-// declare a routing Action in HTML inside of controller
-// EXAMPLE:
-// fan-action='routing'
-
-// FIX ROUTING ISSUES
-// If there is no controller or action then the controller gets replaced with / and action is index
 // If there is only a controller and no action then the controller gets called by it's name and the action is index
 // QUESTION: What if there is a controller and then there's an ID but not an action? 
 // ANSWER: If we declaire our controller function name with - for examaple : "controllerName:id" 
