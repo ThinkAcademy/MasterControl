@@ -278,24 +278,6 @@ var MasterControl = function () {
 /******************************************* MANY DIFFERENT WAYS TO DECLAIR ACTIONS *********************************************/
 /********************************************************************************************************************************/
 
-// This will get replaced with the controller and action url names
-
-// declare a routing Controller in HTML
-// EXAMPLE:
-// fan-controller='routing'
-
-// declare a routing Action in HTML inside of controller
-// EXAMPLE:
-// fan-action='routing'
-
-// FIX ROUTING ISSUES
-// If there is no controller or action then the controller gets replaced with / and action is index
-// If there is only a controller and no action then the controller gets called by it's name and the action is index
-// QUESTION: What if there is a controller and then there's an ID but not an action? 
-// ANSWER: If we declaire our controller function name with - for examaple : "controllerName:id" 
-// what that means is that if we can't find that action don't send error it just means that action is an id
-
-
 /*
 AdminApp.controller('name', function (action, scopeController) {
     console && console.log("inside controller");
@@ -316,3 +298,25 @@ AdminApp.controller('name', function (action, scopeController) {
     });
 });
 */
+
+
+/********************************************************************************************************************************/
+/******************************************* GETTING STARTED ROUTING YOUR APPLICATION *******************************************/
+/********************************************************************************************************************************/
+
+// This will get replaced with the controller and action url names
+
+// declare a routing Controller in HTML
+// EXAMPLE:
+// fan-controller='routing'
+
+// declare a routing Action in HTML inside of controller
+// EXAMPLE:
+// fan-action='routing'
+
+// FIX ROUTING ISSUES
+// If there is no controller or action then the controller gets replaced with / and action is index
+// If there is only a controller and no action then the controller gets called by it's name and the action is index
+// QUESTION: What if there is a controller and then there's an ID but not an action? 
+// ANSWER: If we declaire our controller function name with - for examaple : "controllerName:id" 
+// what that means is that if we can't find that action don't send error it just means that action is an id
