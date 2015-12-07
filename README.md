@@ -65,7 +65,7 @@ Download the minified or commented version and add it to your project's JS libra
      // We also have access to the page scope. For example if you have jquery installed you can do something like $(scope)
      
      // WE ALSO HAVE ACCESS TO OUR ACTIONS FROM INSIDE OUR CONTROLLER, FOR EXAMPLE: 
-      actions.actionName(function(){
+      actions.actionName(function(scope){
        console && console.log("Now this code will be called: Action");
       });
   });
