@@ -1,4 +1,4 @@
-// A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed - ThinkAcademy.io
+// A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed
 // version 1.4
 
 var MasterControl = function () {
@@ -11,17 +11,15 @@ var MasterControl = function () {
 
     var init = function (appName, func) {
 
-
-
         // this makes sure the declarations of modules, controllers, actions get loaded first.
         window.onload = function () {
             //look for main app controller 
             var moduleName = "[fan-app='" + appName + "']";
             var module = document.querySelector(moduleName);
-
+            var routing = "";
             // checks to see if master routing is instantiated
             if(typeof MasterRouter !== 'undefined'){
-                var routing = MasterRouting(module);
+                routing = MasterRouter(module);
             }
 
             // select all controllers inside of the main app
@@ -78,6 +76,7 @@ var MasterControl = function () {
         };
     };
 
+
     // loops through watch array and calls every function
     var digest = function () {
 
@@ -85,12 +84,20 @@ var MasterControl = function () {
         for (var i = 0; i < $$controllerWatch.length; i++) {
            
             var controllerMatchCounter = 0;
-
+            var actionMatchCounter = 0;
             // loop through all function declarations
             $$controllerList.forEach(function (callback, index) {
 
+                // before we look for a match lets clean up the controller name
+                var controllerNameSplit = callback.controllerName.split(":");
+                var controllerName = controllerNameSplit[0];
+
+                if(controllerNameSplit[1] === "id"){
+                    actionMatchCounter++;
+                }
+
                 // only call the declarations that match
-                if (callback.controllerName === $$controllerWatch[i].controllerName) {
+                if (controllerName === $$controllerWatch[i].controllerName) {
                     controllerMatchCounter++;
 
                     var actionObject = {}
@@ -110,7 +117,6 @@ var MasterControl = function () {
                     //loop through html controller list
                     for (var p = 0; p < $$controllerWatch[i].actions.length; p++) {
                         var outerAction = $$controllerWatch[i].actions[p]
-                        var actionMatchCounter = 0;
 
                         // loop through function action list 
                         $$actionList.forEach(function (actionCallBack) {
@@ -243,7 +249,7 @@ var MasterControl = function () {
 // EXAMPLE:
 // AdminApp.action('controllerName', name', function (scope) {});
 
-// declare a action in HTML inside of controller
+// declare a Action in HTML inside of controller
 // EXAMPLE:
 // fan-action='name'
 
@@ -258,6 +264,7 @@ var MasterControl = function () {
 /********************************************************************************************************************************/
 /******************************************* MANY DIFFERENT WAYS TO DECLAIR ACTIONS *********************************************/
 /********************************************************************************************************************************/
+
 
 /*
 AdminApp.controller('name', function (action, scopeController) {
@@ -279,7 +286,4 @@ AdminApp.controller('name', function (action, scopeController) {
     });
 });
 */
-// If there is only a controller and no action then the controller gets called by it's name and the action is index
-// QUESTION: What if there is a controller and then there's an ID but not an action? 
-// ANSWER: If we declaire our controller function name with - for examaple : "controllerName:id" 
-// what that means is that if we can't find that action don't send error it just means that action is an id
+
