@@ -1,4 +1,4 @@
-// A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed
+// A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed - ThinkAcademy.io
 // version 1.4
 
 var MasterControl = function () {
