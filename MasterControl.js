@@ -25,6 +25,7 @@ var MasterControl = function () {
             // select all controllers inside of the main app
             var controllerArray = module.querySelectorAll("[fan-controller]");
 
+            func(module);
             // check that we find a controller declaration inside the app declaration
             if (controllerArray.length > -1) {
 
@@ -66,8 +67,7 @@ var MasterControl = function () {
 
                     // wait for last loop to call digest
                     if (i == controllerArray.length - 1) {
-                        // calling the function that will call every function that relates
-                        func(module);
+     
                         digest();
                     }
                 }
@@ -91,7 +91,7 @@ var MasterControl = function () {
                 // before we look for a match lets clean up the controller name
                 var controllerNameSplit = callback.controllerName.split(":");
                 var controllerName = controllerNameSplit[0];
-                
+
                 // if controller function name has an id then don't call an action and don't throw an error
                 if(controllerNameSplit[1] === "id"){
                     actionMatchCounter++;
