@@ -1,137 +1,145 @@
 // A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed - ThinkAcademy.io
-// version 1.4
+// version 1.5
 
-var MasterControl = function () {
+
+var MasterControl = (function (window, undefined) {
 
     // keeps the list of controller that need to be called
     var $$controllerList = [];
     var $$methodList = [];
     var $$actionList = [];
-    var $$controllerWatch = [];
+    var $$DOMSnapShot = [];
+    var $$DOMCurrentSnapShot = [];
 
-    var init = function (appName, func) {
+    var _init = function (appName, func, refresh) {
 
-        // this makes sure the declarations of modules, controllers, actions get loaded first.
-        window.onload = function () {
+        window.addEventListener('load', function (){
+
             //look for main app controller 
             var moduleName = "[fan-app='" + appName + "']";
             var module = document.querySelector(moduleName);
-            var routing = "";
-            // checks to see if master routing is instantiated
-            if(typeof MasterRouter !== 'undefined'){
-                routing = MasterRouter(module);
-            }
+
+            // call the module method function
+            func(module);
+
+            // setup the DOM SnapShot
+            _setupWatcher(module);
+        });
+    };
+
+    var _setupWatcher = function(module){
 
             // select all controllers inside of the main app
             var controllerArray = module.querySelectorAll("[fan-controller]");
 
-            func(module);
             // check that we find a controller declaration inside the app declaration
-            if (controllerArray.length > -1) {
+            if (controllerArray.length > 0) {
 
                 // loop through all controllers found inside the main app
                 for (var i = 0; i < controllerArray.length; i++) {
 
-                    var controllerName = controllerArray[i].getAttribute("fan-controller");
+                        var controllerWatcher = _createSnapShot(controllerArray[i]);
+                        // send the controller to watch
+                        $$DOMSnapShot.push(controllerWatcher);
 
-                    // create a controller engine 
-                    var controllerWatcher = {
-                        controllerName: controllerName,
-                        controllerScope: controllerArray[i], // scope is the html of the containing declaration
-                        actions : []
-                    };
-
-                    // find actions inside the controller declaration
-                    var actionArray = controllerArray[i].querySelectorAll("[fan-action]");
-
-                    if (actionArray.length > -1) {
-
-                        for (var r = 0; r < actionArray.length; r++) {
-
-                            var actionName = actionArray[i].getAttribute("fan-action");
-
-                                // create a action engine 
-                                var actionWatcher = {
-                                    actionName: actionName,
-                                    actionScope: actionArray[i] // scope is the html of the containing declaration
-                                }
-
-                                // push to action array inside the controller watch
-                                controllerWatcher.actions.push(actionWatcher);
+                        // wait for last loop to call digest html
+                        if (i == controllerArray.length - 1) {
+                            _digestSnapShot();
                         }
-
-                    };
-
-                    // send the controller to watch
-                    $$controllerWatch.push(controllerWatcher);
-
-                    // wait for last loop to call digest
-                    if (i == controllerArray.length - 1) {
-     
-                        digest();
-                    }
                 }
 
             }
-        };
+            else{
+                // cannot find any controllers on page
+                console && console.log("no controller found");
+            }
+
     };
 
+    var _createSnapShot = function(controllerArray){
 
-    // loops through watch array and calls every function
-    var digest = function () {
+            var controllerName = controllerArray.getAttribute("fan-controller");
 
-        // loop through all controller html delcarations
-        for (var i = 0; i < $$controllerWatch.length; i++) {
-           
-            var controllerMatchCounter = 0;
-            var actionMatchCounter = 0;
-            // loop through all function declarations
+            // create a controller engine 
+            var controllerWatcher = {
+                controllerName: controllerName,
+                controllerScope: controllerArray, // scope is the html of the containing declaration
+                actions : []
+            };
+
+            // find actions inside the controller declaration
+            var actionArray = controllerArray.querySelectorAll("[fan-action]");
+
+            if (actionArray.length > 0) {
+
+                for (var r = 0; r < actionArray.length; r++) {
+
+                    var actionName = actionArray[r].getAttribute("fan-action");
+
+                        // create a action engine 
+                        var actionWatcher = {
+                            actionName: actionName,
+                            actionScope: actionArray[r] // scope is the html of the containing declaration
+                        }
+
+                        // push to action array inside the controller watch
+                        controllerWatcher.actions.push(actionWatcher);
+                }
+
+            }
+
+            return controllerWatcher
+    }
+
+        // loops through watch array and calls every function
+    var _digestSnapShot = function () {
+
+        var controllerCalled = false;
+        var actionCalled = false;
+
+        // loop through all controllers html delcarations
+        for (var i = 0; i < $$DOMSnapShot.length; i++) {
+        
+            // loop through all controller function declarations to find matches with DOMSNAPSHOT
             $$controllerList.forEach(function (callback, index) {
 
                 // before we look for a match lets clean up the controller name
                 var controllerNameSplit = callback.controllerName.split(":");
                 var controllerName = controllerNameSplit[0];
 
-                // if controller function name has an id then don't call an action and don't throw an error
-                if(controllerNameSplit[1] === "id"){
-                    actionMatchCounter++;
-                }
-
                 // only call the declarations that match
-                if (controllerName === $$controllerWatch[i].controllerName) {
-                    controllerMatchCounter++;
+                if (controllerName === $$DOMSnapShot[i].controllerName) {
 
-                    var actionObject = {}
-                    // loop through and call all actions inside of function
-                    for (var r = 0; r < $$controllerWatch[i].actions.length; r++) {
-                        var innerAction = $$controllerWatch[i].actions[r];
-                        actionObject[innerAction.actionName] = function(func){
-                            func(innerAction.actionScope);
-                            // remove action you just called from list of actions to call
-                           $$controllerWatch[i].actions = $$controllerWatch[i].actions.splice(r, 1);
-                        };
+                    controllerCalled = true;
 
-                    };
+                    // add the call back function to DOMSnapShot for later use
+                    $$DOMSnapShot[i].callback = callback;
 
-                    callback.aFunction(actionObject, $$controllerWatch[i].controllerScope);
+                    // call the controller
+                    //$$DOMSnapShot[i].callback.aFunction($$DOMSnapShot[i].controllerScope);
+                    _call_controller(controllerName, $$DOMSnapShot[i].controllerScope);
 
                     //loop through html controller list
-                    for (var p = 0; p < $$controllerWatch[i].actions.length; p++) {
-                        var outerAction = $$controllerWatch[i].actions[p]
+                    for (var p = 0; p < $$DOMSnapShot[i].actions.length; p++) {
 
-                        // loop through function action list 
+                        var outerAction = $$DOMSnapShot[i].actions[p]
+
+                        // loop through action function list
                         $$actionList.forEach(function (actionCallBack) {
 
-                            if (actionCallBack.controllerName === $$controllerWatch[i].controllerName && actionCallBack.actionName === $$controllerWatch[i].actions[p].actionName) {
-                                actionMatchCounter++;
-                                actionCallBack.aFunction(outerAction.actionScope);
+                            if (actionCallBack.controllerName === $$DOMSnapShot[i].controllerName && actionCallBack.actionName === $$DOMSnapShot[i].actions[p].actionName) {
+                                actionCalled = true;
+                                // add call back to snapshot
+                                $$DOMSnapShot[i].actions[p].callback = actionCallBack;
+                                _call_action(actionCallBack.actionName, actionCallBack.controllerName, outerAction.actionScope);
+                                //$$DOMSnapShot[i].actions[p].callback.aFunction(outerAction.actionScope);
                             }
 
                         });
 
                         // if action counter is 0 then it did not find action controller with html name
-                        if (actionMatchCounter === 0) {
-                            var errorMessage = "Error could not find any function action declaration with name " + $$controllerWatch[i].actions[p].actionName + " for controller " + $$controllerWatch[i].controllerName;
+                        if (actionCalled === false) {
+                            var errorMessage = "Error could not find any function action declaration with name " + $$DOMSnapShot[i].actions[p].actionName + " for controller " + $$DOMSnapShot[i].controllerName;
                             throw new Error(errorMessage);
                         }
 
@@ -142,23 +150,162 @@ var MasterControl = function () {
             });
 
             // if controller counter is 0 then it did not find function controller with html name
-            if (controllerMatchCounter === 0) {
-                var errorMessage = "Error could not find any function controller declaration with name " + $$controllerWatch[i].controllerName;
+            if (controllerCalled === false) {
+                var errorMessage = "Error could not find any function controller declaration with name " + $$DOMSnapShot[i].controllerName;
                 throw new Error(errorMessage);
             }
         }
 
         //clear the array
-        $$controllerWatch = [];
+        $$DOMCurrentSnapShot = $$DOMSnapShot;
+        $$DOMSnapShot = [];
+    };
 
+    var _refreshDOM = function(scope){
+        // build SnapShot of HTML 
+        // compare new snapshot with current snapshot
+        // if snap shot is dffrent then call controller
+
+        if(scope){
+
+               var controllerArray = scope.querySelectorAll("[fan-controller]");
+
+               if (controllerArray.length > 0 && $$DOMCurrentSnapShot.length > 0) {
+
+                    // inside loop check match with $$DOMCurrentSnapShot
+                    for (var i = 0; i < controllerArray.length; i++) {
+
+                        var newSnapShot = _createSnapShot(controllerArray[i]);
+                        
+                        // loop through current DOM snap shot
+                        for (var p = 0; p < $$DOMCurrentSnapShot.length; p++) {
+
+                                // if controller Array dont match then call
+                            if(newSnapShot.controllerName !== $$DOMCurrentSnapShot[p].controllerName){
+                                // call controller
+                                _call_controller(newSnapShot.controllerName, controllerArray[i]);
+
+                                // loop through new snapshot actions
+                                for (var r = 0; r < newSnapShot.actions.length; r++) {
+                                    var actionName = newSnapShot.actions[r].getAttribute("fan-action");
+                                    _call_action(actionName, controllerName, newSnapShot.actions[r].actionScope);
+                                }
+
+                                $$DOMCurrentSnapShot.push(newSnapShot);
+
+
+                            }
+
+                        }
+
+                    }
+               }
+               // if old dom is blank then nothing has been called then call everything
+               else{
+                                   // inside loop check match with $$DOMCurrentSnapShot
+                    _setupWatcher(scope);
+
+               }
+        }else{
+            var errorMessage = "Please provide scope for refresh function to work properly";
+            throw new Error(errorMessage);
+        }
+    };
+
+    var _call_controller = function (controllerName, scope) {
+          
+
+            if(controllerName){
+
+                   var counter = 0;
+
+                    // loop through all the controller that were loaded 
+                    if ($$controllerList.length > 0) {
+                        // call an anonymous function that has object
+                        $$controllerList.forEach(function (callback) {
+                            // only call the ones that we find in the DOM
+                            if (callback.controllerName === controllerName) {
+                                counter++
+                                callback.aFunction(scope);
+                            }
+                        });
+
+                        // if couter is 0 then it did not find controller for attribute
+                        if (counter === 0) {
+                            var errorMessage = "Error could not find controller with name " + controllerName;
+                            return errorMessage;
+                        }
+                    }
+                    else {
+                        var errorMessage = "Error could not find any controller";
+                        return errorMessage;
+                    }
+                }
+    };
+
+    var _call_action = function (actionName, controllerName, scope) {
+
+            if(actionName && controllerName){
+
+                var counter = 0;
+
+                // loop through all the actions that were loaded 
+                if ($$actionList.length > 0) {
+
+                    for(var b = 0; $$actionList.length > b; b++){
+
+                        var actionNameLowercase = $$actionList[b].actionName.toLowerCase();
+                        var controllerNameLowercase = $$actionList[b].controllerName.toLowerCase();
+                        var actionName = actionName.toLowerCase();
+                        var controllerName = controllerName.toLowerCase();
+
+                        if(actionNameLowercase === actionName){
+                            // only call the ones that we find in the DOM
+                            if (actionNameLowercase === actionName && controllerNameLowercase == controllerName) {
+                                counter++
+                                $$actionList[b].aFunction(scope);
+                            }
+                        }
+
+                    }
+
+                    // if couter is 0 then it did not find controller for attribute
+                    if (counter === 0) {
+                        var errorMessage = "Error could not find action with name " + actionName;
+                        return errorMessage;
+                    }
+                }
+                else {
+                    var errorMessage = "Error could not find any action";
+                    return errorMessage;
+                }
+            }
     };
 
     // return only the api that we want to use
     return {
+            // will refresh DOM
+            refresh:function(scope){
+                _refreshDOM(scope);
+            },
+
+            // call controller using name
+            callController : function(controllerName, scope){
+                var returnController = _call_controller(controllerName, scope);
+                return returnController;
+            },
+
+            // call action using name
+            callAction : function(actionName, controllerName, scope){
+
+                var returnAction = _call_action(actionName, controllerName, scope);
+                return returnAction;
+            },
             
             module : function(appName, func){
                 // calling inner fucntion
-                init(appName, func);
+                _init(appName, func, false);
+                return this;
             },
 
             // this gets called by the declairation of the function on the page
@@ -170,6 +317,7 @@ var MasterControl = function () {
                 }
 
                 $$controllerList.push(object);
+                return this;
             },
 
             // this gets called by the declairation of the function on the page
@@ -182,12 +330,14 @@ var MasterControl = function () {
                 }
 
                 $$actionList.push(object);
+                return this;
             },
 
             // this will call any methods that we create
             callMethod : function (methodName, dataObject) {
 
                     var counter = 0;
+                    var returnData;
                     // loop through all models that were loaded 
                     if ($$methodList.length > 0) {
                         // call an anonymous function that has object
@@ -195,19 +345,20 @@ var MasterControl = function () {
                             // only call the ones that we find in the DOM
                             if (callback.scopeName === methodName) {
                                 counter++
-                                callback.aFunction(dataObject);
+                                returnData = callback.aFunction(dataObject);
                             }
                         });
                         // if couter is 0 then it did not find controller for attribute
                         if (counter === 0) {
-                            var errorMessage = "Error could not find method with name " + methodName;
+                            var errorMessage = "Error could not find method with name - " + methodName;
                             throw new Error(errorMessage);
                         }
                     }
                     else {
-                        var errorMessage = "Error could not find any methods";
+                        var errorMessage = "Error could not find any method with name - " + methodName;
                         throw new Error(errorMessage);
                     }
+                    return returnData;
                 },
 
                 // this gets called first to load all the Views
@@ -219,11 +370,11 @@ var MasterControl = function () {
                     }
 
                     $$methodList.push(object);
-
+                    return this;
                 }
 
     }
-};
+})(window);
 
 /********************************************************************************************************************************/
 /************************************************ LOADING YOUR APPLICATION EXAMPLES *********************************************/
@@ -262,29 +413,7 @@ var MasterControl = function () {
 // AdminApp.method('name', function ( data ) {});
 
 
-/********************************************************************************************************************************/
-/******************************************* MANY DIFFERENT WAYS TO DECLAIR ACTIONS *********************************************/
-/********************************************************************************************************************************/
 
 
-/*
-AdminApp.controller('name', function (action, scopeController) {
-    console && console.log("inside controller");
-    AdminApp.action('CONTROLLER NAME', "name", function(scopeAction){
-            console && console.log("inside action");
-    });
-});
-AdminApp.controller('name', function (scopeController) {
-    console && console.log("inside controller");
-});
-AdminApp.action('controller name','name', function (scopeAction) {
-    console && console.log("inside action");
-});
-AdminApp.controller('name', function (action, scopeController) {
-    console && console.log("inside controller");
-    action.nameOfAction(function(scopeAction){
-        console && console.log("inside action");
-    });
-});
-*/
+
 
