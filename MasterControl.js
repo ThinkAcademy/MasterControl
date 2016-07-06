@@ -1,6 +1,5 @@
 // A simple controller Based JAVSCRIPT framework by Alexander Think - MIT Licensed - ThinkAcademy.io
-// version 1.5
-
+// version 1.7
 
 var MasterControl = (function (window, undefined) {
 
@@ -80,7 +79,7 @@ var MasterControl = (function (window, undefined) {
                         var actionWatcher = {
                             actionName: actionName,
                             actionScope: actionArray[r] // scope is the html of the containing declaration
-                        }
+                        };
 
                         // push to action array inside the controller watch
                         controllerWatcher.actions.push(actionWatcher);
@@ -88,8 +87,8 @@ var MasterControl = (function (window, undefined) {
 
             }
 
-            return controllerWatcher
-    }
+            return controllerWatcher;
+    };
 
         // loops through watch array and calls every function
     var _digestSnapShot = function () {
@@ -122,7 +121,7 @@ var MasterControl = (function (window, undefined) {
                     //loop through html controller list
                     for (var p = 0; p < $$DOMSnapShot[i].actions.length; p++) {
 
-                        var outerAction = $$DOMSnapShot[i].actions[p]
+                        var outerAction = $$DOMSnapShot[i].actions[p];
 
                         // loop through action function list
                         $$actionList.forEach(function (actionCallBack) {
@@ -213,7 +212,6 @@ var MasterControl = (function (window, undefined) {
     };
 
     var _call_controller = function (controllerName, scope) {
-          
 
             if(controllerName){
 
@@ -225,7 +223,7 @@ var MasterControl = (function (window, undefined) {
                         $$controllerList.forEach(function (callback) {
                             // only call the ones that we find in the DOM
                             if (callback.controllerName === controllerName) {
-                                counter++
+                                counter++;
                                 callback.aFunction(scope);
                             }
                         });
@@ -235,6 +233,8 @@ var MasterControl = (function (window, undefined) {
                             var errorMessage = "Error could not find controller with name " + controllerName;
                             return errorMessage;
                         }
+
+                        return null
                     }
                     else {
                         var errorMessage = "Error could not find any controller";
@@ -262,7 +262,7 @@ var MasterControl = (function (window, undefined) {
                         if(actionNameLowercase === actionName){
                             // only call the ones that we find in the DOM
                             if (actionNameLowercase === actionName && controllerNameLowercase == controllerName) {
-                                counter++
+                                counter++;
                                 $$actionList[b].aFunction(scope);
                             }
                         }
@@ -274,6 +274,8 @@ var MasterControl = (function (window, undefined) {
                         var errorMessage = "Error could not find action with name " + actionName;
                         return errorMessage;
                     }
+
+                    return null
                 }
                 else {
                     var errorMessage = "Error could not find any action";
@@ -292,6 +294,7 @@ var MasterControl = (function (window, undefined) {
             // call controller using name
             callController : function(controllerName, scope){
                 var returnController = _call_controller(controllerName, scope);
+                console && console.log("controllerName", returnController);
                 return returnController;
             },
 
@@ -314,7 +317,7 @@ var MasterControl = (function (window, undefined) {
                 var object = {
                     controllerName: controllerName,
                     aFunction: aFunction
-                }
+                };
 
                 $$controllerList.push(object);
                 return this;
@@ -327,7 +330,7 @@ var MasterControl = (function (window, undefined) {
                     controllerName: controllerName,
                     actionName: actionName,
                     aFunction: aFunction
-                }
+                };
 
                 $$actionList.push(object);
                 return this;
@@ -344,7 +347,7 @@ var MasterControl = (function (window, undefined) {
                         $$methodList.forEach(function (callback) {
                             // only call the ones that we find in the DOM
                             if (callback.scopeName === methodName) {
-                                counter++
+                                counter++;
                                 returnData = callback.aFunction(dataObject);
                             }
                         });
@@ -367,21 +370,20 @@ var MasterControl = (function (window, undefined) {
                     var object = {
                         scopeName: scopeName,
                         aFunction: aFunction
-                    }
+                    };
 
                     $$methodList.push(object);
                     return this;
                 }
 
-    }
+    };
 })(window);
-
 /********************************************************************************************************************************/
 /************************************************ LOADING YOUR APPLICATION EXAMPLES *********************************************/
 /********************************************************************************************************************************/
 
 // load the Application
-// var app = MasterControl();
+// var app = MasterControl;
 
 // declare the Application
 // app.module("nameofApp", function(scope){});
@@ -411,9 +413,4 @@ var MasterControl = (function (window, undefined) {
 // declare a Mothod 
 // EXAMPLE: 
 // AdminApp.method('name', function ( data ) {});
-
-
-
-
-
 
